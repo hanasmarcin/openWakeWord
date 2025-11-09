@@ -1,0 +1,90 @@
+## Configuration file for Android-compatible wake word model
+## This will create a TFLite model compatible with LiteRT on Android
+
+# The name of the model (will be used when creating directories and saving the final .tflite file)
+model_name: "android_wakeword"
+
+# The target word/phrase to be detected by the model
+# You can add multiple phrases - the model will activate on any of them
+target_phrase:
+  - "hey assistant"
+  # Add more phrases here if needed:
+  # - "wake up"
+  # - "activate"
+
+# Specific phrases that you do NOT want the model to activate on
+# Add phrases here that cause false positives in your testing
+custom_negative_phrases: []
+
+# The total number of positive samples to generate for training
+# For Android, you can start with fewer samples for testing, then increase for production
+# Minimum: 20,000 recommended, 100,000+ for best results
+# NOTE: With augmentation_rounds: 2, 20k samples = 40k effective training examples!
+n_samples: 50000
+
+# The total number of positive samples to generate for validation
+n_samples_val: 2000
+
+# The batch size to use with Piper TTS when generating synthetic training data
+tts_batch_size: 50
+
+# The batch size to use when performing data augmentation
+augmentation_batch_size: 16
+
+# The path to a fork of the piper-sample-generator repository for TTS
+# You'll need to clone: https://github.com/dscripka/piper-sample-generator
+piper_sample_generator_path: "./piper-sample-generator"
+
+# The output directory for generated clips, features, and trained models
+output_dir: "./android_model_output"
+
+# The directories containing Room Impulse Response recordings
+# Download from: https://www.openslr.org/28/
+rir_paths:
+  - "./mit_rirs"
+
+# The directories containing background audio files to mix with training data
+# You can use any audio files (speech, music, noise) for background augmentation
+background_paths:
+  - "./background_clips"
+
+# Duplication rate for background audio (1 = use each file once)
+background_paths_duplication_rate:
+  - 1
+
+# The location of pre-computed openwakeword features for false-positive validation data
+# Download from: https://huggingface.co/datasets/davidscripka/openwakeword_features
+# Or leave empty and use a smaller validation set
+false_positive_validation_data_path: "./validation_set_features.npy"
+
+# Number of times to apply augmentations to the generated training data
+# Higher values = more variety but longer training time
+# RECOMMENDED: 2-3 for best results (multiplies your effective dataset!)
+# Each round creates unique augmented versions with different noise/RIR combinations
+augmentation_rounds: 2
+
+# Paths to pre-computed openwakeword features for negative data
+# Download from: https://huggingface.co/datasets/davidscripka/openwakeword_features
+# Format: ACAV100M_sample: "./openwakeword_features_ACAV100M_2000_hrs_16bit.npy"
+# HIGHLY RECOMMENDED: This 2000-hour dataset dramatically reduces false positives!
+feature_data_files:
+  "ACAV100M_sample": "./openwakeword_features_ACAV100M_2000_hrs_16bit.npy"
+
+# Number of examples from each data file per batch
+# Adjust based on available memory and training speed
+# Higher negative values = better false positive control
+batch_n_per_class:
+  "ACAV100M_sample": 1024      # Large negative dataset (if using feature_data_files)
+  "adversarial_negative": 100  # Generated adversarial examples
+  "positive": 100             # Positive examples
+
+# Model architecture settings
+# For Android, smaller models are better for performance
+model_type: "dnn"  # Options: "dnn" or "rnn"
+layer_size: 32     # Smaller = faster inference, larger = potentially more accurate
+
+# Training parameters optimized for Android deployment
+steps: 50000
+max_negative_weight: 1500
+target_false_positives_per_hour: 0.2
+

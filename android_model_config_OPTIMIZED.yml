@@ -1,0 +1,163 @@
+## OPTIMIZED Configuration for Best Possible Android Model
+## This config uses all available library features for maximum quality
+
+# The name of the model
+model_name: "android_wakeword_optimized"
+
+# The target word/phrase to be detected
+target_phrase:
+  - "hey assistant"
+  # Add variations if needed:
+  # - "hey assistant please"
+  # - "assistant"
+
+# Specific phrases that cause false positives - add these as you discover them
+custom_negative_phrases: []
+  # Example: if "hey assistant" triggers on "hey assistant manager", add:
+  # - "hey assistant manager"
+
+# ============================================
+# DATA GENERATION - More is better!
+# ============================================
+
+# Number of positive samples for training
+# RECOMMENDED: 100,000+ for production models
+# Minimum: 20,000 for decent results
+n_samples: 100000
+
+# Number of positive samples for validation
+n_samples_val: 10000
+
+# TTS batch size (adjust based on GPU memory)
+tts_batch_size: 50
+
+# ============================================
+# DATA AUGMENTATION - Critical for robustness
+# ============================================
+
+# Batch size for augmentation (smaller = more variety per batch)
+augmentation_batch_size: 16
+
+# Number of augmentation rounds - CRITICAL OPTIMIZATION
+# Each round creates unique augmented versions of your clips
+# RECOMMENDED: 2-3 rounds for best results
+# This multiplies your effective dataset size!
+augmentation_rounds: 3
+
+# Piper TTS path
+piper_sample_generator_path: "./piper-sample-generator"
+
+# Output directory
+output_dir: "./android_model_output_optimized"
+
+# ============================================
+# ROOM ACOUSTICS (RIR) - Simulates real environments
+# ============================================
+# Download from: https://www.openslr.org/28/
+# Or use HuggingFace: davidscripka/MIT_environmental_impulse_responses
+rir_paths:
+  - "./mit_rirs"
+
+# ============================================
+# BACKGROUND NOISE - Already included in augmentation!
+# ============================================
+# The training script automatically mixes these with your clips
+# Use multiple directories for diversity
+
+background_paths:
+  - "./background_clips"
+  - "./background_speech"      # Add if you have speech audio
+  - "./background_music"        # Add if you have music
+  - "./background_noise"        # Add if you have environmental noise
+
+# Duplication rates - use higher values for more important noise types
+# This controls how often each directory's files are used
+background_paths_duplication_rate:
+  - 1    # General background
+  - 2    # Speech (very common in real environments)
+  - 1    # Music
+  - 1    # Environmental noise
+
+# ============================================
+# NEGATIVE DATA - Critical for low false positives
+# ============================================
+# Pre-computed features from large audio datasets
+# Download from: https://huggingface.co/datasets/davidscripka/openwakeword_features
+# This is HIGHLY RECOMMENDED for best results!
+
+feature_data_files:
+  "ACAV100M_sample": "./openwakeword_features_ACAV100M_2000_hrs_16bit.npy"
+  # You can add more datasets:
+  # "another_dataset": "./another_features.npy"
+
+# Batch composition - balance between positive and negative examples
+# Higher negative values = better false positive control
+batch_n_per_class:
+  "ACAV100M_sample": 1024      # Large negative dataset
+  "adversarial_negative": 100  # Generated adversarial examples
+  "positive": 100              # Positive examples
+
+# ============================================
+# VALIDATION DATA - For early stopping and model selection
+# ============================================
+# Download from: https://huggingface.co/datasets/davidscripka/openwakeword_features
+false_positive_validation_data_path: "./validation_set_features.npy"
+
+# ============================================
+# MODEL ARCHITECTURE - Balance speed vs accuracy
+# ============================================
+
+# Model type: "dnn" (faster) or "rnn" (potentially more accurate)
+model_type: "dnn"
+
+# Layer size: 32 is good for Android, 64-128 for better accuracy (slower)
+# For best accuracy while staying mobile-friendly, try 48 or 64
+layer_size: 48
+
+# ============================================
+# TRAINING PARAMETERS - Optimized for quality
+# ============================================
+
+# Training steps - more steps = better convergence
+# RECOMMENDED: 50,000+ for production models
+steps: 50000
+
+# Maximum negative weight - controls false positive rate
+# Higher = stricter on false positives (may reduce recall slightly)
+# RECOMMENDED: 1500-2000 for production
+max_negative_weight: 2000
+
+# Target false positives per hour
+# Lower = stricter (fewer false activations)
+# RECOMMENDED: 0.2 for production, 0.1 for very strict requirements
+target_false_positives_per_hour: 0.2
+
+# ============================================
+# OPTIMIZATION NOTES
+# ============================================
+#
+# This config enables:
+# ✅ Maximum data augmentation (3 rounds)
+# ✅ Large training dataset (100k samples)
+# ✅ Large negative dataset (2000 hours)
+# ✅ Multiple background noise types
+# ✅ Room impulse responses for acoustic simulation
+# ✅ Optimized model size (48 neurons - good balance)
+# ✅ Extended training (50k steps)
+# ✅ Strict false positive control
+#
+# Training time: Expect 8-24 hours depending on hardware
+# Model quality: Production-ready, robust to noise and environments
+# Model size: ~200-300 KB (still mobile-friendly)
+#
+# For faster training (lower quality):
+# - Reduce n_samples to 20,000
+# - Reduce augmentation_rounds to 1
+# - Reduce steps to 25,000
+#
+# For maximum quality (slower training):
+# - Increase n_samples to 200,000+
+# - Increase augmentation_rounds to 4-5
+# - Increase steps to 100,000
+# - Increase layer_size to 64-128 (but model will be larger/slower)
+
